@@ -1,5 +1,10 @@
-#copyright © 2019 manoharkakumani
-import socket,os,subprocess,shutil,pickle,struct
+#copyright © 2019-2021 manoharkakumani
+import socket
+import os
+import subprocess
+import shutil
+import pickle
+import struct
 s = socket.socket()
 #hostip
 def bind():
