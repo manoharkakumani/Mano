@@ -359,19 +359,19 @@ def mano(cip,conn):
         elif cli == 'help':
             print("""
 shell   --> To open cmd or terminal\n
-fdown   --> To download files from client\n
+fdown   --> To download files from target\n
 fup     --> Upload files to client\n
 fl      --> List of files in your current directory\n
-cfl     --> List of files in client's current directory\n
+cfl     --> List of files in target's current directory\n
 pwd     --> Get your current directory\n
-cwd     --> Get client's current directory\n
+cwd     --> Get target's current directory\n
 cd      --> Change your current directory\n
-ccd     --> Change client's current directory\n
+ccd     --> Change target's current directory\n
 fdel    --> Delete file in your current directory\n
-cdel    --> Delete file from client's current directory\n
-sshot   --> To take screenshot of clint's screen\n
-cam     --> To access client camera\n
-sst     --> To stream client screen\n
+cdel    --> Delete file from target's current directory\n
+sshot   --> To take screenshot of target's screen\n
+cam     --> To access target camera\n
+sst     --> To stream target screen\n
 help    --> Help \n
 back    --> Back to MANO\n
 exit    --> To terminate : """+cip+"""\n""")
