@@ -1,4 +1,4 @@
-# PyAttacker
+# Mano
 >> It is a networking app based on python. Where You can control target machine using your machine
 type help to see list of commands in each and every level.
 run host.py in host mechanic and then run target.py in target mechanic. you can Access shell of targed ,you can delete upload and download files from target,you can take screenshot of your target mechine display
