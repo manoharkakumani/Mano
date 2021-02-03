@@ -1,14 +1,15 @@
-# Mano (V 0.0.1)
->> It is a Remorte Desktop Controlling  tool based on python. Where You can control target machine using your machine
-
+# Mano 
+ * It is a Remote Desktop Controlling  tool based on python. Where You can control target machine using your machine.
+ * Version 0.0.1
+ 
 # Steps to follow 
   * Install requirements in host machine.
   * Run the target.py in target machine.
   * Run the host.py in your machine.
-    # Know target ip  
+  * Know target ip  
       * Enter target ip. 
       * Type help to see list of commands.
-    # Don't know target ip
+  * Don't know target ip
       * Edit target.py and place your ip.
       * Run in target.py in target machine.
       
