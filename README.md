@@ -29,4 +29,4 @@
   * Access target camera.
   * Stream target screen.
 
-> It is for Educational Puropse I'm not responsable for tool is misused.
+> It is for Educational Puropse I'm not responsable if tool is misused.
