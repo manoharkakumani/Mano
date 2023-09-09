@@ -1,3 +1,5 @@
 opencv-python
 pyautogui
 numpy
+Pillow
+pyinstaller
