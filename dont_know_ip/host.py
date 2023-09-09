@@ -25,7 +25,7 @@ print("""
 | |\/| | / _ \ |  \| | | | |  \ \ 
 | |  | |/ ___ \| |\  | |_| |  / / 
 |_|  |_/_/   \_\_| \_|\___/  /_/
-copyright © 2019-2021 manoharkakumani""")
+copyright © 2019-2023 manoharkakumani""")
 print("\n******************************************************")
 
 # Create a Socket ( connect two computers)
@@ -35,7 +35,7 @@ def create_socket():
         global port
         global s
         host = ""
-        port = int(input("Enter port: "))
+        port = 9999
         s = socket.socket()
     except socket.error as msg:
         print("Socket creation error: " + str(msg))
@@ -164,7 +164,7 @@ def fdel():
 #Your DIR to change    
 def chdir():
     try:
-        print("Your current working dir :"+os.getcwd())
+        print("Your current working dir : "+os.getcwd())
         x=input("Do you want to change (Y/N) ? : ").upper()
         if x=='Y':
            dire=input("Enter your DIR to change: ")
@@ -180,13 +180,13 @@ def chdir():
 def cchdir(conn):
     try:
         conn.send(('cdir~s').encode("utf-8"))
-        print("client current working dir :"+conn.recv(1024).decode("utf-8"))
+        print("client current working dir : "+conn.recv(1024).decode("utf-8"))
         x=input("Do you want to change (Y/N) ? : ").upper()
         conn.send(str(x).encode("utf-8"))
         if x=='Y':
            dire=input("Enter your DIR to change: ")
            conn.send((dire).encode("utf-8"))
-           print("client current working dir :"+conn.recv(1024).decode("utf-8"))
+           print("client current working dir : "+conn.recv(1024).decode("utf-8"))
         else :
             return
     except:
@@ -195,7 +195,7 @@ def cchdir(conn):
 #Your Working DIR Files
     
 def flist():
-    print("Your Working DIR Files :\n")
+    print("Your Working DIR Files :")
     for i in os.listdir():
         print(i)
         
@@ -382,7 +382,7 @@ def menu(cip,conn):
              if(fdel()):
                  print("SUCCESS!")
         elif cli=='pwd':
-             print("Your current working directory :"+os.getcwd())
+             print("Your current working directory : "+os.getcwd())
         elif cli=='cwd':
              conn.send(('cwd~s').encode("utf-8"))
              print("Client current working directory :"+conn.recv(1024).decode("utf-8"))
@@ -435,14 +435,14 @@ def MANO():
             conn,cip = getclient(cmd)
             if conn is not None:
                 menu(cip,conn)
-        elif cmd=='chdir':
+        elif cmd=='cd':
              chdir()
         elif cmd=='fdel':
              fdel()
         elif cmd=='fl':
              flist()
-        elif cmd=='cd':
-             print("Your current working directory :"+os.getcwd())
+        elif cmd=='pwd':
+            print("Your current working directory : "+os.getcwd())
         elif cmd == 'help':
             print("""
 list      --> See all the clients\n
