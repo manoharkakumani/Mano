@@ -1,4 +1,4 @@
-#copyright © 2019-2021 manoharkakumani
+#copyright © 2019-2023 manoharkakumani
 import socket
 import sys
 import os
@@ -35,9 +35,8 @@ def create_socket():
         global port
         global s
         host = ""
-        port = 9999
+        port = int(input("Enter port: "))
         s = socket.socket()
-
     except socket.error as msg:
         print("Socket creation error: " + str(msg))
 
@@ -90,12 +89,12 @@ def dmenu(nm):
     print("----------------------------------------------------------------------------")
 #deloading
 def dload():
-    a=100;
+    a=100
     while int(a)>=0:
         sys.stdout.write("\r|"+"█"*int(a/2)+"|{0:.2f}".format(a)+ "%  ")
         sys.stdout.flush()
         time.sleep(0.01)
-        a-=1;
+        a-=1
 
 #delete files or folders in client DIR
 def cdel(conn):
@@ -456,6 +455,7 @@ help      --> Help \n
 quit      --> quit\n""")
         elif cmd == 'quit':
             closeconn()
+            sys.exit(0)
             return
         else :
               print("Command not recognized")
@@ -534,14 +534,13 @@ def deQueue():
         if x == 2:
             time.sleep(0.1)
             MANO()
-            exit(0)
         queue.task_done()
-        
 
 #Insert thread into Queue
 def enQueue():
     for x in proc:
         queue.put(x)
     queue.join()
+
 createThreads()
 enQueue()
