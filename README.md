@@ -2,16 +2,19 @@
  * It is a Remote Desktop Controlling  tool based on python. Where You can control target machine using your machine.
  * Version 0.0.1
  
-# Steps to follow 
-  * Install requirements in host machine.
-  * Run the target.py in target machine.
-  * Run the host.py in your machine.
-  * Know target ip  
-      * Enter target ip. 
-      * Type help to see list of commands.
-  * Don't know target ip
-      * Edit target.py and place your ip.
-      * Run in target.py in target machine.
+#System Requirements:
+ * OS : Windows or Linux 
+ * Python 3.9 or Greater
+#Installation and configuration:
+ 1.	Clone the GitHub repo
+ 2.	Go the Mano directory and open terminal or cmd
+ 3.	Install the python packages using: pip install –r requirements.txt
+ 4.	The tool offers 2 variants of exploitation 
+  a.	If you target IP address go to know_ip and edit port in host.py and in target.py by default 9999 – we can exploit one system at a time
+  b.	If you target IP address go to  dont_know_ip and edit port in host.py and in target.py by default 9999 and add your IP address in target.py – we can exploit many systems at a time
+ 5.	Use pyinstaller --onefile -w dont_know_ip/target.py or pyinstaller --onefile -w know_ip/target.py to create executable file.
+ 6.	Run the host.py in your machine and the target.exe in the machine you want to test.
+
       
 # Features
   * Access target's cmd or terminal.
