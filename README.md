@@ -2,10 +2,11 @@
  * It is a Remote Desktop Controlling  tool based on python. Where You can control target machine using your machine.
  * Version 0.0.1
  
-#System Requirements:
+# System Requirements:
  * OS : Windows or Linux 
  * Python 3.9 or Greater
-#Installation and configuration:
+
+# Installation and configuration:
  1.	Clone the GitHub repo
  2.	Go the Mano directory and open terminal or cmd
  3.	Install the python packages using: pip install –r requirements.txt
